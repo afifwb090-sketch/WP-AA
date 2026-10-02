@@ -1,0 +1,6 @@
+{
+  "name": "Wedding Planner Management System",
+  "description": "Luxury Wedding Preparation & Dual-Event Management Platform for Bride & Groom Sides",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
