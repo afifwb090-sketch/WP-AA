@@ -39,7 +39,7 @@ export function App() {
   // Core Data States
   const [currentUser, setCurrentUser] = useState<User>(apiService.getCurrentUser());
   const [projects, setProjects] = useState<WeddingProject[]>(apiService.getProjects());
-  const [activeProject, setActiveProject] = useState<WeddingProject>(
+  const [activeProject, setActiveProject] = useState<WeddingProject | undefined>(
     apiService.getProjectById(apiService.getActiveProjectId()) || projects[0]
   );
 
@@ -60,6 +60,14 @@ export function App() {
     setProjects(projs);
     const activeId = apiService.getActiveProjectId();
     const proj = projs.find(p => p.wedding_id === activeId) || projs[0];
+    setAllUsers(apiService.getUsers());
+    setCurrentUser(apiService.getCurrentUser());
+    if (!proj) {
+      setActiveProject(undefined);
+      setEvents([]); setBudgets([]); setTasks([]); setGuests([]);
+      setVendors([]); setBookings([]); setRundowns([]); setDocuments([]);
+      return;
+    }
     setActiveProject(proj);
 
     const evs = apiService.getEventsByWedding(proj.wedding_id);
@@ -78,6 +86,9 @@ export function App() {
 
   useEffect(() => {
     refreshData();
+    // Sinkron otomatis dengan Google Sheet (tidak aktif bila URL belum diisi)
+    const stopSync = apiService.startAutoSync(refreshData);
+    return stopSync;
   }, []);
 
   // Split event data between Wanita & Pria
@@ -121,6 +132,30 @@ export function App() {
   const completedTasksCount = tasks.filter(t => t.status === 'Completed').length;
   const totalTasksCount = tasks.length;
   const pendingGuestsCount = guests.filter(g => g.RSVP_status === 'Belum Konfirmasi').length;
+
+  if (!activeProject) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] text-[#2D2A26] flex items-center justify-center p-6">
+        <div className="max-w-md text-center space-y-5">
+          <h1 className="font-serif text-4xl text-[#3A2E1A]">Wedding Planner</h1>
+          <p className="text-stone-600">
+            Belum ada proyek pernikahan. Buat proyek pertama untuk mulai menambahkan acara, budget, tamu, dan vendor.
+          </p>
+          <button
+            onClick={() => setIsNewProjectOpen(true)}
+            className="px-6 py-3 rounded-xl bg-[#9B7337] text-white font-semibold hover:bg-[#85612d] transition-colors"
+          >
+            + Buat Proyek Pertama
+          </button>
+        </div>
+        <NewProjectModal
+          isOpen={isNewProjectOpen}
+          onClose={() => setIsNewProjectOpen(false)}
+          onProjectCreated={handleProjectCreated}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#2D2A26] flex flex-col selection:bg-[#EEDEC3] selection:text-[#3A2E1A]">
@@ -291,6 +326,7 @@ export function App() {
       <GasDocsModal
         isOpen={isGasDocsOpen}
         onClose={() => setIsGasDocsOpen(false)}
+        onSynced={refreshData}
       />
 
       <NewProjectModal
