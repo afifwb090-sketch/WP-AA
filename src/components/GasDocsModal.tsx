@@ -19,9 +19,10 @@ import { apiService } from '../services/apiService';
 interface GasDocsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSynced?: () => void;
 }
 
-export const GasDocsModal: React.FC<GasDocsModalProps> = ({ isOpen, onClose }) => {
+export const GasDocsModal: React.FC<GasDocsModalProps> = ({ isOpen, onClose, onSynced }) => {
   const [activeTab, setActiveTab] = useState<'script' | 'sheets' | 'api' | 'cloudflare' | 'testing'>('script');
   const [copied, setCopied] = useState(false);
   const [webAppUrl, setWebAppUrl] = useState(apiService.getGasConfig().webAppUrl);
@@ -47,10 +48,17 @@ export const GasDocsModal: React.FC<GasDocsModalProps> = ({ isOpen, onClose }) =
     if (webAppUrl.trim()) {
       setTestResult({ status: 'testing', message: 'Menguji koneksi ke Google Apps Script...' });
       const res = await apiService.testGasConnection(webAppUrl.trim());
-      if (res.success) {
-        setTestResult({ status: 'success', message: 'Koneksi berhasil! Backend Google Apps Script aktif.' });
-      } else {
+      if (!res.success) {
         setTestResult({ status: 'error', message: res.message });
+        return;
+      }
+      setTestResult({ status: 'testing', message: 'Koneksi berhasil. Menggabungkan data lokal dengan Google Sheet...' });
+      const merged = await apiService.connectAndMerge();
+      if (merged.success) {
+        setTestResult({ status: 'success', message: merged.message });
+        onSynced?.();
+      } else {
+        setTestResult({ status: 'error', message: merged.message });
       }
     } else {
       setTestResult({ status: 'idle', message: 'Menggunakan mode Local Storage Storage.' });
@@ -156,7 +164,7 @@ export const GasDocsModal: React.FC<GasDocsModalProps> = ({ isOpen, onClose }) =
                   Hubungkan URL Google Apps Script Web App (Opsional)
                 </label>
                 <p className="text-xs text-stone-500">
-                  Jika Anda telah men-deploy Apps Script ke Web App, masukkan URL di bawah ini untuk live-sync dengan Google Sheets. Bila kosong, aplikasi tetap berjalan lancar dengan penyimpanan lokal otomatis.
+                  Masukkan URL Web App yang sama di setiap perangkat agar data tersinkron lewat Google Sheet (otomatis tiap 20 detik dan saat tab dibuka lagi). Pastikan kode Apps Script terbaru sudah ditempel dan di-deploy sebagai versi baru. Bila kosong, data hanya tersimpan di browser ini.
                 </p>
                 <div className="flex gap-2">
                   <input

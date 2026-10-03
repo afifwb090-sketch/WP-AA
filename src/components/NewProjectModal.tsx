@@ -18,8 +18,8 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
     nama_pasangan_pria: '',
     nama_pasangan_wanita: '',
     tanggal_mulai_project: new Date().toISOString().split('T')[0],
-    konsep_pernikahan: 'Modern Javanese Luxury & Champagne Gold',
-    wedding_organizer: 'Royal Harmony Wedding Organizer',
+    konsep_pernikahan: '',
+    wedding_organizer: '',
     notes: ''
   });
 

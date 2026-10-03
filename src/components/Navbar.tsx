@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Heart, 
   Crown, 
@@ -14,7 +14,7 @@ import {
   Layers
 } from 'lucide-react';
 import { User, WeddingProject, UserRole, SideType } from '../types';
-import { apiService } from '../services/apiService';
+import { apiService, SyncStatus } from '../services/apiService';
 
 interface NavbarProps {
   currentUser: User;
@@ -42,6 +42,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sync, setSync] = useState<SyncStatus>(apiService.getSyncStatus());
+  useEffect(() => apiService.subscribeSync(setSync), []);
 
   const roles: { role: UserRole; title: string; badge: string; desc: string }[] = [
     { role: 'admin', title: 'Admin Wedding Organizer', badge: 'WO Admin', desc: 'Akses penuh seluruh project & vendor' },
@@ -190,6 +192,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Database className="w-3.5 h-3.5 text-[#B88E4B]" />
               <span className="hidden lg:inline">Backend & Sheets</span>
+              {sync.state !== 'off' && (
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    sync.state === 'error' ? 'bg-red-500' : sync.state === 'syncing' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-500'
+                  }`}
+                  title={sync.state === 'error' ? `Gagal sinkron: ${sync.error || ''}` : sync.state === 'syncing' ? 'Menyinkronkan...' : `Tersinkron${sync.pending ? ` (${sync.pending} tertunda)` : ''}`}
+                />
+              )}
             </button>
 
             {/* Role Switcher Dropdown */}
